@@ -193,3 +193,15 @@ func (r *gormRepository) HandleError(res *gorm.DB) error {
 
 	return nil
 }
+
+func (r *gormRepository) HandleOneError(res *gorm.DB) error {
+	if err := r.HandleError(res); err != nil {
+		return err
+	}
+
+	if res.RowsAffected != 1 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
