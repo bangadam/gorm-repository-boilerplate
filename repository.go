@@ -26,7 +26,7 @@ func (r *gormRepository) DBWithPreloads(preloads []string) *gorm.DB {
 		conn = conn.Joins(join)
 	}
 
-	for _, preload := range r.defaultJoins {
+	for _, preload := range preloads {
 		conn = conn.Preload(preload)
 	}
 
