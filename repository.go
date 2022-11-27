@@ -52,10 +52,11 @@ func (r *gormRepository) FindBatch(target interface{}, limit, offset int, orderB
 		query = query.Group(*groupBy)
 	}
 
-	res := query.Count(&count).
+	res := query.
 		Limit(limit).
 		Offset(offset).
-		Find(target)
+		Find(target).
+		Count(&count)
 
 	return count, r.HandleError(res)
 }
