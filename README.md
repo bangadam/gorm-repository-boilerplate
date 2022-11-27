@@ -50,7 +50,7 @@ Gorm Repository Boilerplate is a boilerplate for gorm repository pattern. It is 
 
 ## :sparkles: Features
 
-:heavy_check_mark: CRUD;\
+:heavy_check_mark: CRUD
 
 ## :rocket: Technologies
 
@@ -94,7 +94,7 @@ func (r *repository) FindByName(target interface{}, name string, preloads ...str
 
 This project is under license from MIT. For more details, see the [LICENSE](LICENSE.md) file.
 
-Made with :heart: by <a href="https://github.com/bangadam" target="_blank">{{YOUR_NAME}}</a>
+Made with :heart: by <a href="https://github.com/bangadam" target="_blank">bangadam</a>
 
 &#xa0;
 
