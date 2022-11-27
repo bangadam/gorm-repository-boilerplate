@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 type Repository interface {
 	FindAll(target interface{}, preloads ...string) error
-	FindBatch(target interface{}, limit, offset int, preloads ...string) error
+	FindBatch(target interface{}, limit, offset int, orderBy, orderSort *string, groupBy *string, preloads ...string) (count int64, err error)
 
 	FindWhere(target interface{}, condition string, preloads ...string) error
 	FindWhereBatch(target interface{}, condition string, limit, offset int, preloads ...string) error
