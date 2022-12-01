@@ -38,18 +38,22 @@ func (r *gormRepository) FindAll(target interface{}, preloads ...string) error {
 		Debug().
 		Find(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
-func (r *gormRepository) FindBatch(target interface{}, limit, offset int, orderBy, orderSort *string, groupBy *string, preloads ...string) (count int64, err error) {
+func (r *gormRepository) FindBatch(target interface{}, limit, offset int, search, orderBy, groupBy string, preloads ...string) (count int64, err error) {
 	query := r.DBWithPreloads(preloads).Debug()
 
-	if orderBy != nil {
-		query = query.Order(fmt.Sprintf("%s %s", *orderBy, *orderSort))
+	if search != "" {
+		query = query.Where(search)
 	}
 
-	if groupBy != nil {
-		query = query.Group(*groupBy)
+	if orderBy != "" {
+		query = query.Order(orderBy)
+	}
+
+	if groupBy != "" {
+		query = query.Group(groupBy)
 	}
 
 	res := query.
@@ -58,7 +62,7 @@ func (r *gormRepository) FindBatch(target interface{}, limit, offset int, orderB
 		Find(target).
 		Count(&count)
 
-	return count, r.HandleOneError(res)
+	return count, r.HandleError(res)
 }
 
 func (r *gormRepository) FindWhere(target interface{}, condition string, preloads ...string) error {
@@ -67,18 +71,31 @@ func (r *gormRepository) FindWhere(target interface{}, condition string, preload
 		Where(condition).
 		Find(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
-func (r *gormRepository) FindWhereBatch(target interface{}, condition string, limit, offset int, preloads ...string) error {
-	res := r.DBWithPreloads(preloads).
-		Debug().
-		Where(condition).
+func (r *gormRepository) FindWhereBatch(target interface{}, condition string, limit, offset int, search, orderBy, groupBy string, preloads ...string) (count int64, err error) {
+	query := r.DBWithPreloads(preloads).Debug()
+
+	if search != "" {
+		query = query.Where(search)
+	}
+
+	if orderBy != "" {
+		query = query.Order(orderBy)
+	}
+
+	if groupBy != "" {
+		query = query.Group(groupBy)
+	}
+
+	res := query.Where(condition).
 		Limit(limit).
 		Offset(offset).
-		Find(target)
+		Find(target).
+		Count(&count)
 
-	return r.HandleOneError(res)
+	return count, r.HandleError(res)
 }
 
 func (r *gormRepository) FindByField(target interface{}, field string, value interface{}, preloads ...string) error {
@@ -87,7 +104,7 @@ func (r *gormRepository) FindByField(target interface{}, field string, value int
 		Where(fmt.Sprintf("%s = ?", field), value).
 		Find(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
 func (r *gormRepository) FindByFields(target interface{}, fields map[string]interface{}, preloads ...string) error {
@@ -96,29 +113,55 @@ func (r *gormRepository) FindByFields(target interface{}, fields map[string]inte
 		Where(fields).
 		Find(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
-func (r *gormRepository) FindByFieldBatch(target interface{}, field string, value interface{}, limit, offset int, preloads ...string) error {
-	res := r.DBWithPreloads(preloads).
-		Debug().
-		Where(fmt.Sprintf("%s = ?", field), value).
+func (r *gormRepository) FindByFieldBatch(target interface{}, field string, value interface{}, limit, offset int, search, orderBy, groupBy string, preloads ...string) (count int64, err error) {
+	query := r.DBWithPreloads(preloads).Debug()
+
+	if search != "" {
+		query = query.Where(search)
+	}
+
+	if orderBy != "" {
+		query = query.Order(orderBy)
+	}
+
+	if groupBy != "" {
+		query = query.Group(groupBy)
+	}
+
+	res := query.Where(fmt.Sprintf("%s = ?", field), value).
 		Limit(limit).
 		Offset(offset).
-		Find(target)
+		Find(target).
+		Count(&count)
 
-	return r.HandleOneError(res)
+	return count, r.HandleError(res)
 }
 
-func (r *gormRepository) FindByFieldsBatch(target interface{}, fields map[string]interface{}, limit, offset int, preloads ...string) error {
-	res := r.DBWithPreloads(preloads).
-		Debug().
-		Where(fields).
+func (r *gormRepository) FindByFieldsBatch(target interface{}, fields map[string]interface{}, limit, offset int, search, orderBy, groupBy string, preloads ...string) (count int64, err error) {
+	query := r.DBWithPreloads(preloads).Debug()
+
+	if search != "" {
+		query = query.Where(search)
+	}
+
+	if orderBy != "" {
+		query = query.Order(orderBy)
+	}
+
+	if groupBy != "" {
+		query = query.Group(groupBy)
+	}
+
+	res := query.Where(fields).
 		Limit(limit).
 		Offset(offset).
-		Find(target)
+		Find(target).
+		Count(&count)
 
-	return r.HandleOneError(res)
+	return count, r.HandleError(res)
 }
 
 func (r *gormRepository) FindOneByField(target interface{}, field string, value interface{}, preloads ...string) error {
@@ -148,40 +191,49 @@ func (r *gormRepository) FindOneByID(target interface{}, id interface{}, preload
 	return r.HandleOneError(res)
 }
 
+func (r *gormRepository) FindOneByCondition(target interface{}, condition string, preloads ...string) error {
+	res := r.DBWithPreloads(preloads).
+		Debug().
+		Where(condition).
+		First(target)
+
+	return r.HandleOneError(res)
+}
+
 func (r *gormRepository) Create(target interface{}) error {
 	res := r.DB().Debug().Create(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
 func (r *gormRepository) CreateTx(target interface{}, tx *gorm.DB) error {
 	res := tx.Debug().Create(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
 func (r *gormRepository) Save(target interface{}) error {
 	res := r.DB().Debug().Save(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
 func (r *gormRepository) SaveTx(target interface{}, tx *gorm.DB) error {
 	res := tx.Debug().Save(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
 func (r *gormRepository) Delete(target interface{}) error {
 	res := r.DB().Debug().Delete(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
 func (r *gormRepository) DeleteTx(target interface{}, tx *gorm.DB) error {
 	res := tx.Debug().Delete(target)
 
-	return r.HandleOneError(res)
+	return r.HandleError(res)
 }
 
 // handle error
