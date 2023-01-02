@@ -16,11 +16,11 @@ func NewGormRepository(db *gorm.DB, defaultJoins ...string) *gormRepository {
 }
 
 func (r *gormRepository) DB() *gorm.DB {
-	return r.DBWithPreloads(nil)
+	return r.DBWithPreloads(nil).Debug()
 }
 
 func (r *gormRepository) DBWithPreloads(preloads []string) *gorm.DB {
-	conn := r.db
+	conn := r.db.Debug()
 
 	for _, join := range r.defaultJoins {
 		conn = conn.Joins(join)
@@ -33,16 +33,22 @@ func (r *gormRepository) DBWithPreloads(preloads []string) *gorm.DB {
 	return conn
 }
 
+func (r *gormRepository) FindByRaw(target interface{}, query string) error {
+	res := r.DB().Raw(query).
+		Scan(target)
+
+	return r.HandleError(res)
+}
+
 func (r *gormRepository) FindAll(target interface{}, preloads ...string) error {
 	res := r.DBWithPreloads(preloads).
-		Debug().
 		Find(target)
 
 	return r.HandleError(res)
 }
 
 func (r *gormRepository) FindBatch(target interface{}, limit, offset int, search, orderBy, groupBy string, preloads ...string) (count int64, err error) {
-	query := r.DBWithPreloads(preloads).Debug()
+	query := r.DBWithPreloads(preloads)
 
 	if search != "" {
 		query = query.Where(search)
@@ -67,7 +73,6 @@ func (r *gormRepository) FindBatch(target interface{}, limit, offset int, search
 
 func (r *gormRepository) FindWhere(target interface{}, condition string, preloads ...string) error {
 	res := r.DBWithPreloads(preloads).
-		Debug().
 		Where(condition).
 		Find(target)
 
@@ -75,7 +80,7 @@ func (r *gormRepository) FindWhere(target interface{}, condition string, preload
 }
 
 func (r *gormRepository) FindWhereBatch(target interface{}, condition string, limit, offset int, search, orderBy, groupBy string, preloads ...string) (count int64, err error) {
-	query := r.DBWithPreloads(preloads).Debug()
+	query := r.DBWithPreloads(preloads)
 
 	if search != "" {
 		query = query.Where(search)
@@ -100,7 +105,6 @@ func (r *gormRepository) FindWhereBatch(target interface{}, condition string, li
 
 func (r *gormRepository) FindByField(target interface{}, field string, value interface{}, preloads ...string) error {
 	res := r.DBWithPreloads(preloads).
-		Debug().
 		Where(fmt.Sprintf("%s = ?", field), value).
 		Find(target)
 
@@ -109,7 +113,6 @@ func (r *gormRepository) FindByField(target interface{}, field string, value int
 
 func (r *gormRepository) FindByFields(target interface{}, fields map[string]interface{}, preloads ...string) error {
 	res := r.DBWithPreloads(preloads).
-		Debug().
 		Where(fields).
 		Find(target)
 
@@ -117,7 +120,7 @@ func (r *gormRepository) FindByFields(target interface{}, fields map[string]inte
 }
 
 func (r *gormRepository) FindByFieldBatch(target interface{}, field string, value interface{}, limit, offset int, search, orderBy, groupBy string, preloads ...string) (count int64, err error) {
-	query := r.DBWithPreloads(preloads).Debug()
+	query := r.DBWithPreloads(preloads)
 
 	if search != "" {
 		query = query.Where(search)
@@ -141,7 +144,7 @@ func (r *gormRepository) FindByFieldBatch(target interface{}, field string, valu
 }
 
 func (r *gormRepository) FindByFieldsBatch(target interface{}, fields map[string]interface{}, limit, offset int, search, orderBy, groupBy string, preloads ...string) (count int64, err error) {
-	query := r.DBWithPreloads(preloads).Debug()
+	query := r.DBWithPreloads(preloads)
 
 	if search != "" {
 		query = query.Where(search)
@@ -166,16 +169,22 @@ func (r *gormRepository) FindByFieldsBatch(target interface{}, fields map[string
 
 func (r *gormRepository) FindOneByField(target interface{}, field string, value interface{}, preloads ...string) error {
 	res := r.DBWithPreloads(preloads).
-		Debug().
 		Where(fmt.Sprintf("%s = ?", field), value).
 		First(target)
 
 	return r.HandleOneError(res)
 }
 
+func (r *gormRepository) FindOneLastByField(target interface{}, field string, value interface{}, preloads ...string) error {
+	res := r.DBWithPreloads(preloads).
+		Where(fmt.Sprintf("%s = ?", field), value).
+		Last(target)
+
+	return r.HandleOneError(res)
+}
+
 func (r *gormRepository) FindOneByFields(target interface{}, fields map[string]interface{}, preloads ...string) error {
 	res := r.DBWithPreloads(preloads).
-		Debug().
 		Where(fields).
 		First(target)
 
@@ -184,7 +193,6 @@ func (r *gormRepository) FindOneByFields(target interface{}, fields map[string]i
 
 func (r *gormRepository) FindOneByID(target interface{}, id interface{}, preloads ...string) error {
 	res := r.DBWithPreloads(preloads).
-		Debug().
 		Where("id = ?", id).
 		First(target)
 
@@ -193,15 +201,23 @@ func (r *gormRepository) FindOneByID(target interface{}, id interface{}, preload
 
 func (r *gormRepository) FindOneByCondition(target interface{}, condition string, preloads ...string) error {
 	res := r.DBWithPreloads(preloads).
-		Debug().
 		Where(condition).
 		First(target)
 
 	return r.HandleOneError(res)
 }
 
+func (r *gormRepository) FindOneLastByCondition(target interface{}, condition string, preloads ...string) error {
+	res := r.DBWithPreloads(preloads).
+		Where(condition).
+		Order("id desc").
+		First(target)
+
+	return r.HandleOneError(res)
+}
+
 func (r *gormRepository) Create(target interface{}) error {
-	res := r.DB().Debug().Create(target)
+	res := r.DB().Create(target)
 
 	return r.HandleError(res)
 }
@@ -213,7 +229,7 @@ func (r *gormRepository) CreateTx(target interface{}, tx *gorm.DB) error {
 }
 
 func (r *gormRepository) Save(target interface{}) error {
-	res := r.DB().Debug().Save(target)
+	res := r.DB().Save(target)
 
 	return r.HandleError(res)
 }
@@ -224,14 +240,26 @@ func (r *gormRepository) SaveTx(target interface{}, tx *gorm.DB) error {
 	return r.HandleError(res)
 }
 
+func (r *gormRepository) UpdateOrCreateTx(target interface{}, attributes map[string]interface{}, values map[string]interface{}, tx *gorm.DB) error {
+	res := tx.Debug().Where(attributes).Assign(values).FirstOrCreate(target)
+
+	return r.HandleError(res)
+}
+
 func (r *gormRepository) Delete(target interface{}) error {
-	res := r.DB().Debug().Delete(target)
+	res := r.DB().Delete(target)
 
 	return r.HandleError(res)
 }
 
 func (r *gormRepository) DeleteTx(target interface{}, tx *gorm.DB) error {
 	res := tx.Debug().Delete(target)
+
+	return r.HandleError(res)
+}
+
+func (r *gormRepository) DeleteTxByCondition(target interface{}, condition string, tx *gorm.DB) error {
+	res := tx.Debug().Where(condition).Delete(target)
 
 	return r.HandleError(res)
 }
